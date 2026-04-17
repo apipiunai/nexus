@@ -102,6 +102,12 @@
             }
         }
 
+        @media  (max-width: 850px) {
+            .carousel-container {
+                transform: scale(0.6);
+            }
+        }
+
         .particle:nth-child(1) { left: 5%; width: 2px; height: 2px; animation-duration: 15s; animation-delay: 0s; --drift: 20px; }
         .particle:nth-child(2) { left: 15%; width: 1px; height: 1px; animation-duration: 12s; animation-delay: 2s; --drift: -15px; }
         .particle:nth-child(3) { left: 25%; width: 3px; height: 3px; animation-duration: 18s; animation-delay: 4s; --drift: 30px; }
@@ -168,7 +174,7 @@
             box-shadow: 0 0 40px var(--card-color), inset 0 0 25px var(--card-color);
         }
 
-        .app-card h2 {
+        .app-card h3 {
             font-size: 2.2rem;
             text-transform: uppercase;
             font-weight: 900;
@@ -193,9 +199,20 @@
             letter-spacing: 2px;
         }
 
-        h2, p, div{
+        h3, p, div{
             user-select: none;
         }
+
+        html, body{
+            overflow: hidden;
+        }
+
+        .carousel-container, .ring{
+            touch-action: none;
+            overscroll-behavior-y: none;
+            overscroll-behavior-x: none;
+        }
+
     </style>
 </head>
 
@@ -225,35 +242,36 @@
     </div>
 
     <div class="carousel-container">
+        
         <div class="ring" id="ring">
             <a href="https://apipiunai.github.io/vibe" target="_blank" class="app-card" style="--card-color: #7dff00;">
-                <div class="id-badge">PROJECT_01</div>
-                <h2>Vibe<br>AI</h2>
+                <div class="id-badge">PROJECT_00</div>
+                <h3>Vibe<br>AI</h3>
                 <p>Busqueda de vinos con inteligencia artificial</p>
             </a>
             <a href="https://apipiunai.github.io/apipi_scada" target="_blank" class="app-card" style="--card-color: #ff0055;">
                 <div class="id-badge">PROJECT_02</div>
-                <h2>Scada<br>APIPI</h2>
+                <h3>Scada<br>APIPI</h3>
                 <p>Sistema SCADA para el monitoreo y control de procesos industriales</p>
             </a>
             <a href="https://apipiunai.github.io/guias" target="_blank" class="app-card" style="--card-color: #ffffff;">
                 <div class="id-badge">PROJECT_03</div>
-                <h2>Docs<br>APIPI</h2>
+                <h3>Docs<br>APIPI</h3>
                 <p>Guías y tutoriales de diferentes niveles de conocimiento en programación</p>
             </a>
             <a href="#" target="_blank" class="app-card" style="--card-color: #00bbff;">
                 <div class="id-badge">PROJECT_04</div>
-                <h2>React Docs<br></h2>
+                <h3>React Docs<br></h3>
                 <p>Setup inicial y ejemplos de código de React con Vite</p>
             </a>
             <a href="#" target="_blank" class="app-card" style="--card-color: #ffaa00;">
                 <div class="id-badge">PROJECT_05</div>
-                <h2>Reads<br>APIPI</h2>
+                <h3>Reads<br>APIPI</h3>
                 <p>Libros y ensayos de autor</p>
             </a>
             <a href="#" target="_blank" class="app-card" style="--card-color: #0077ff;">
                 <div class="id-badge">PROJECT_06</div>
-                <h2>Directory<br>APIPI</h2>
+                <h3>Directory<br>APIPI</h3>
                 <p>Directorio de herramientas y recursos de programación y digitalización</p>
             </a>
         </div>
