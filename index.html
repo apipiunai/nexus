@@ -355,7 +355,7 @@
                 ? (e.pageY ?? e.touches[0].pageY)
                 : (e.pageX ?? e.touches[0].pageX);
             const diff = pos - startPos;
-            rotation += diff * 0.25;
+            rotation -= diff * 0.25;
             startPos = pos;
             applyRotation();
         };
