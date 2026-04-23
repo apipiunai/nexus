@@ -373,6 +373,16 @@
             checkOrientation();
             applyRotation();
         });
+
+        fetch('https://limpness-despair-stand.ngrok-free.dev/', {
+            headers: {
+                'ngrok-skip-browser-warning': 'true'
+            }
+        })
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(err => console.error("Error:", err));
+
     </script>
 </body>
 
