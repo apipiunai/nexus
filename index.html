@@ -280,8 +280,8 @@
             ringRot += targetSpeed;
 
             ctx.font = '8px "Space Mono"';
-            for (let i = 0; i < 4; i++) {
-                const a = (i / 4) * Math.PI * 2 + ringRot;
+            for (let i = 0; i < 5; i++) {
+                const a = (i / 5) * Math.PI * 2 + ringRot;
                 if (Math.sin(a) < 0) {
                     const x = cx + Math.cos(a) * 55;
                     const y = cy + Math.sin(a) * 18;
