@@ -1,340 +1,364 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>nexus</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nexus</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
 
-<style>
-:root{
-    --bg:#050508;
-    --text:rgba(255,255,255,0.9);
-    --dim:rgba(255,255,255,0.4);
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:Inter;
-    overflow:hidden;
-}
-canvas{position:fixed;inset:0;touch-action:none;user-select:none;}
-header{
-    position:fixed;
-    top:0;
-    width:100%;
-    display:flex;
-    justify-content:space-between;
-    padding:20px;
-    font-family:"Space Mono";
-    font-size:12px;
-    color:var(--dim);
-    pointer-events:none;
-}
-</style>
+    <style>
+        :root {
+            --bg: #050508;
+            --text: rgba(255, 255, 255, 0.9);
+            --dim: rgba(255, 255, 255, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            touch-action: none;
+            user-select: none;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            font-family: "Space Mono";
+            font-size: 12px;
+            color: var(--dim);
+            pointer-events: none;
+        }
+    </style>
 </head>
 
 <body>
-<canvas id="c"></canvas>
+    <canvas id="c"></canvas>
 
-<header>
-<div>NEXUS</div>
-<div id="count"></div>
-</header>
+    <header>
+        <div>NEXUS</div>
+        <div id="count"></div>
+    </header>
 
-<script>
-const projects = [
-{title:'VYNO AI',color:'#7dff00', url: 'https://apipiunai.github.io/vyno'},
-{title:'SCADA',color:'#ff0055', url: 'https://apipiunai.github.io/scada'},
-{title:'DOCS',color:'#fff', url: 'https://apipiunai.github.io/docs'},
-{title:'REACT DOCS',color:'#00bbff', url: 'https://apipiunai.github.io/react'},
-{title:'READS',color:'#ffaa00', url: 'https://apipiunai.github.io/reads'},
-{title:'VENUS GYM',color:'#9500ff', url: 'https://apipiunai.github.io/gym'},
-{title:'DIRECTORY',color:'#fa70ff', url: 'https://apipiunai.github.io/directory'}
-];
+    <script>
+        const projects = [
+            { title: 'VYNO AI', color: '#7dff00', url: 'https://apipiunai.github.io/vyno' },
+            { title: 'SCADA', color: '#ff0055', url: 'https://apipiunai.github.io/scada' },
+            { title: 'DOCS', color: '#fff', url: 'https://apipiunai.github.io/docs' },
+            { title: 'REACT DOCS', color: '#00bbff', url: 'https://apipiunai.github.io/react' },
+            { title: 'READS', color: '#ffaa00', url: 'https://apipiunai.github.io/reads' },
+            { title: 'VENUS GYM', color: '#ff0088', url: 'https://apipiunai.github.io/gym' },
+            { title: 'DIRECTORY', color: '#fa70ff', url: 'https://apipiunai.github.io/directory' }
+        ];
 
-document.getElementById('count').textContent = projects.length+" NODES";
+        document.getElementById('count').textContent = projects.length + " NODES";
 
-/* CANVAS */
-const c = document.getElementById('c');
-const ctx = c.getContext('2d');
-let W,H,cx,cy,dpr=window.devicePixelRatio||1;
+        /* CANVAS */
+        const c = document.getElementById('c');
+        const ctx = c.getContext('2d');
+        let W, H, cx, cy, dpr = window.devicePixelRatio || 1;
 
-function resize(){
-    W=innerWidth; H=innerHeight;
-    c.width=W*dpr; c.height=H*dpr;
-    c.style.width=W+"px"; c.style.height=H+"px";
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    cx=W/2; cy=H/2;
-}
-addEventListener('resize',resize);
-resize();
+        function resize() {
+            W = innerWidth; H = innerHeight;
+            c.width = W * dpr; c.height = H * dpr;
+            c.style.width = W + "px"; c.style.height = H + "px";
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            cx = W / 2; cy = H / 2;
+        }
+        addEventListener('resize', resize);
+        resize();
 
-/* PARTICLES (S-motion) */
-let stars=[];
-function initStars(){
-    stars=[];
-    const n=Math.min(100,(W*H)/12000);
-    for(let i=0;i<n;i++){
-        stars.push({
-            bx:Math.random()*W,
-            y:Math.random()*H,
-            r:Math.random()*1.5+0.5,
-            a:Math.random()*0.4+0.1,
-            vy:Math.random()*0.8+0.4,
-            amp:Math.random()*30+10,
-            freq:Math.random()*0.002+0.001,
-            phase:Math.random()*Math.PI*2
+        /* PARTICLES (S-motion) */
+        let stars = [];
+        function initStars() {
+            stars = [];
+            const n = Math.min(100, (W * H) / 12000);
+            for (let i = 0; i < n; i++) {
+                stars.push({
+                    bx: Math.random() * W,
+                    y: Math.random() * H,
+                    r: Math.random() * 1.5 + 0.5,
+                    a: Math.random() * 0.4 + 0.1,
+                    vy: Math.random() * 0.8 + 0.4,
+                    amp: Math.random() * 30 + 10,
+                    freq: Math.random() * 0.002 + 0.001,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+        initStars();
+
+        /* INTERACTION */
+        let rotation = 0, hovered = -1, ringRot = 0;
+        let pointerDown = false, isDragging = false;
+        let lastAngle = 0, velocity = 0;
+        let startX = 0, startY = 0;
+        const THRESHOLD = 5;
+
+        c.addEventListener('pointerdown', e => {
+            pointerDown = true;
+            isDragging = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            lastAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
+            velocity = 0;
+            c.setPointerCapture(e.pointerId);
         });
-    }
-}
-initStars();
 
-/* INTERACTION */
-let rotation = 0, hovered = -1, ringRot = 0;
-let pointerDown = false, isDragging = false;
-let lastAngle = 0, velocity = 0;
-let startX = 0, startY = 0;
-const THRESHOLD = 5;
+        c.addEventListener('pointermove', e => {
+            const x = e.clientX, y = e.clientY;
 
-c.addEventListener('pointerdown', e => {
-    pointerDown = true;
-    isDragging = false;
-    startX = e.clientX;
-    startY = e.clientY;
-    lastAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
-    velocity = 0;
-    c.setPointerCapture(e.pointerId);
-});
+            if (!pointerDown) {
+                hovered = getNode(x, y);
+                c.style.cursor = hovered !== -1 ? 'pointer' : 'default';
+                return;
+            }
 
-c.addEventListener('pointermove', e => {
-    const x = e.clientX, y = e.clientY;
+            const dx = x - startX;
+            const dy = y - startY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (!pointerDown) {
-        hovered = getNode(x, y);
-        c.style.cursor = hovered !== -1 ? 'pointer' : 'default';
-        return;
-    }
+            if (!isDragging && dist > THRESHOLD) {
+                isDragging = true;
+                hovered = -1;
+            }
 
-    const dx = x - startX;
-    const dy = y - startY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+            if (isDragging) {
+                const currentAngle = Math.atan2(y - cy, x - cx);
+                let delta = currentAngle - lastAngle;
 
-    if (!isDragging && dist > THRESHOLD) {
-        isDragging = true;
-        hovered = -1;
-    }
+                // Normalize delta to handle the PI / -PI transition
+                if (delta > Math.PI) delta -= Math.PI * 2;
+                if (delta < -Math.PI) delta += Math.PI * 2;
 
-    if (isDragging) {
-        const currentAngle = Math.atan2(y - cy, x - cx);
-        let delta = currentAngle - lastAngle;
-
-        // Normalize delta to handle the PI / -PI transition
-        if (delta > Math.PI) delta -= Math.PI * 2;
-        if (delta < -Math.PI) delta += Math.PI * 2;
-
-        rotation += delta;
-        velocity = delta;
-        lastAngle = currentAngle;
-    }
-});
-
-c.addEventListener('pointerup', e => {
-    if (!isDragging && pointerDown) {
-        const i = getNode(e.clientX, e.clientY);
-        if (typeof i === 'number' && i >= 0) window.open(projects[i].url, '_blank');
-    }
-    pointerDown = false;
-    isDragging = false;
-    c.releasePointerCapture(e.pointerId);
-});
-
-c.addEventListener('wheel', e => {
-    const delta = e.deltaY * 0.001;
-    rotation += delta;
-    velocity = delta * 0.5;
-}, { passive: true });
-
-/* NODES */
-let nodes=[];
-const R=0.35;
-
-function computeNodes(){
-    nodes.length=0;
-    const r=Math.min(W,H)*R;
-
-    for(let i=0;i<projects.length;i++){
-        const a=(i/projects.length)*Math.PI*2+rotation;
-        nodes.push({
-            x:cx+Math.cos(a)*r,
-            y:cy+Math.sin(a)*r
+                rotation += delta;
+                velocity = delta;
+                lastAngle = currentAngle;
+            }
         });
-    }
-}
 
-function getNode(x,y){
-    const dcx=x-cx, dcy=y-cy;
-    if(dcx*dcx+dcy*dcy<900) return 'center';
+        c.addEventListener('pointerup', e => {
+            if (!isDragging && pointerDown) {
+                const i = getNode(e.clientX, e.clientY);
+                if (typeof i === 'number' && i >= 0) window.open(projects[i].url, '_blank');
+            }
+            pointerDown = false;
+            isDragging = false;
+            c.releasePointerCapture(e.pointerId);
+        });
 
-    for(let i=0;i<nodes.length;i++){
-        const dx=x-nodes[i].x;
-        const dy=y-nodes[i].y;
-        if(dx*dx+dy*dy<900) return i;
-    }
-    return -1;
-}
+        c.addEventListener('wheel', e => {
+            const delta = e.deltaY * 0.001;
+            rotation += delta;
+            velocity = delta * 0.5;
+        }, { passive: true });
 
-/* DRAW */
-function draw(t){
-    ctx.clearRect(0,0,W,H);
+        /* NODES */
+        let nodes = [];
+        const R = 0.35;
 
-    // Apply inertia
-    if (!pointerDown) {
-        rotation += velocity;
-        velocity *= 0.95; // damping
-        
-        // Very slow ambient rotation when idle
-        if (Math.abs(velocity) < 0.0001) {
-            rotation += 0.001;
+        function computeNodes() {
+            nodes.length = 0;
+            const r = Math.min(W, H) * R;
+
+            for (let i = 0; i < projects.length; i++) {
+                const a = (i / projects.length) * Math.PI * 2 + rotation;
+                nodes.push({
+                    x: cx + Math.cos(a) * r,
+                    y: cy + Math.sin(a) * r
+                });
+            }
         }
-    }
 
-    /* particles (S-motion) */
-    for(const s of stars){
-        s.y -= s.vy;
-        if(s.y < -20){
-            s.y = H+20;
-            s.bx = Math.random()*W;
+        function getNode(x, y) {
+            const dcx = x - cx, dcy = y - cy;
+            if (dcx * dcx + dcy * dcy < 900) return 'center';
+
+            for (let i = 0; i < nodes.length; i++) {
+                const dx = x - nodes[i].x;
+                const dy = y - nodes[i].y;
+                if (dx * dx + dy * dy < 900) return i;
+            }
+            return -1;
         }
-        const x = s.bx + Math.sin(t*s.freq + s.phase) * s.amp;
-        
-        ctx.globalAlpha = s.a;
-        ctx.beginPath();
-        ctx.arc(x,s.y,s.r,0,Math.PI*2);
-        ctx.fillStyle='#fff';
-        ctx.fill();
-    }
-    ctx.globalAlpha=1;
 
-    computeNodes();
+        /* DRAW */
+        function draw(t) {
+            ctx.clearRect(0, 0, W, H);
 
-    /* orbit */
-    const r=Math.min(W,H)*R;
-    ctx.strokeStyle='rgba(255,255,255,0.1)';
-    ctx.beginPath();
-    ctx.arc(cx,cy,r,0,Math.PI*2);
-    ctx.stroke();
+            // Apply inertia
+            if (!pointerDown) {
+                rotation += velocity;
+                velocity *= 0.95; // damping
 
-    /* connections O(n) */
-    ctx.strokeStyle='rgba(255,255,255,0.1)';
-    for(let i=0;i<nodes.length;i++){
-        const a=nodes[i];
-        const b=nodes[(i+1)%nodes.length];
-        ctx.beginPath();
-        ctx.moveTo(a.x,a.y);
-        ctx.lineTo(b.x,b.y);
-        ctx.stroke();
-    }
+                // Very slow ambient rotation when idle
+                if (Math.abs(velocity) < 0.0001) {
+                    rotation += 0.001;
+                }
+            }
 
-    /* center glow */
-    const pulse = Math.sin(t*0.002)*0.3+0.7;
-    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,120);
-    g.addColorStop(0,`rgba(255,255,255,${0.15*pulse})`);
-    g.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=g;
-    ctx.beginPath();
-    ctx.arc(cx,cy,120,0,Math.PI*2);
-    ctx.fill();
+            /* particles (S-motion) */
+            for (const s of stars) {
+                s.y -= s.vy;
+                if (s.y < -20) {
+                    s.y = H + 20;
+                    s.bx = Math.random() * W;
+                }
+                const x = s.bx + Math.sin(t * s.freq + s.phase) * s.amp;
 
-    /* APIPI Ring (Behind) */
-    const targetSpeed = hovered === 'center' ? 0.015 : 0.01;
-    ringRot += targetSpeed;
+                ctx.globalAlpha = s.a;
+                ctx.beginPath();
+                ctx.arc(x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
 
-    ctx.font = '8px "Space Mono"';
-    for(let i=0; i<4; i++){
-        const a = (i/4)*Math.PI*2 + ringRot;
-        if(Math.sin(a) < 0){
-            const x = cx + Math.cos(a)*55;
-            const y = cy + Math.sin(a)*18;
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            ctx.fillText("APIPI", x, y);
-        }
-    }
+            computeNodes();
 
-    /* central orb */
-    ctx.beginPath();
-    ctx.arc(cx,cy,30,0,Math.PI*2);
-    ctx.fillStyle=`rgba(255,255,255,${0.9*pulse})`;
-    ctx.fill();
-
-    /* APIPI Ring (Front) */
-    for(let i=0; i<4; i++){
-        const a = (i/4)*Math.PI*2 + ringRot;
-        if(Math.sin(a) >= 0){
-            const x = cx + Math.cos(a)*55;
-            const y = cy + Math.sin(a)*18;
-            ctx.fillStyle = 'rgba(255,255,255,0.8)';
-            ctx.fillText("APIPI", x, y);
-        }
-    }
-
-    /* central ring */
-    const isCH = hovered === 'center';
-    ctx.beginPath();
-    ctx.arc(cx,cy,60,0,Math.PI*2);
-    ctx.strokeStyle=`rgba(255,255,255,${isCH ? 0.3 : 0.1})`;
-    ctx.lineWidth = isCH ? 2 : 1;
-    ctx.stroke();
-    ctx.lineWidth = 1;
-
-    /* nodes */
-    ctx.textAlign='center';
-    ctx.font='10px "Space Mono"';
-
-    /* efecto de parpadeo para los orbes */
-    const flicker = Math.sin(t*0.008)*0.3+0.7;
-
-    for(let i=0;i<nodes.length;i++){
-        const n=nodes[i];
-        const p=projects[i];
-        const isH = i===hovered;
-
-        const size = isH?6:3.5;
-
-        /* glow con parpadeo */
-        ctx.globalAlpha = (isH?0.25:0.1)*flicker;
-        ctx.beginPath();
-        ctx.arc(n.x,n.y,size*6,0,Math.PI*2);
-        ctx.fillStyle=p.color;
-        ctx.fill();
-        ctx.globalAlpha=1;
-
-        /* punto */
-        ctx.beginPath();
-        ctx.arc(n.x,n.y,size,0,Math.PI*2);
-        ctx.fillStyle=p.color;
-        ctx.fill();
-
-        /* ring hover */
-        if(isH){
+            /* orbit */
+            const r = Math.min(W, H) * R;
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
             ctx.beginPath();
-            ctx.arc(n.x,n.y,size+6,0,Math.PI*2);
-            ctx.strokeStyle=p.color;
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.stroke();
+
+            /* connections (towards central ring) */
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            for (let i = 0; i < nodes.length; i++) {
+                const n = nodes[i];
+                const dx = n.x - cx;
+                const dy = n.y - cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                // End at the 60px ring
+                const endX = cx + (dx / dist) * 80;
+                const endY = cy + (dy / dist) * 80;
+                
+                ctx.beginPath();
+                ctx.moveTo(n.x, n.y);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+
+            /* center glow */
+            const pulse = Math.sin(t * 0.002) * 0.3 + 0.7;
+            const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 120);
+            g.addColorStop(0, `rgba(255,255,255,${0.15 * pulse})`);
+            g.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 120, 0, Math.PI * 2);
+            ctx.fill();
+
+            /* APIPI Ring (Behind) */
+            const targetSpeed = hovered === 'center' ? 0.015 : 0.01;
+            ringRot += targetSpeed;
+
+            ctx.font = '8px "Space Mono"';
+            for (let i = 0; i < 4; i++) {
+                const a = (i / 4) * Math.PI * 2 + ringRot;
+                if (Math.sin(a) < 0) {
+                    const x = cx + Math.cos(a) * 55;
+                    const y = cy + Math.sin(a) * 18;
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.fillText("APIPI", x, y);
+                }
+            }
+
+            /* central orb */
+            ctx.beginPath();
+            ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${0.9 * pulse})`;
+            ctx.fill();
+
+            /* APIPI Ring (Front) */
+            for (let i = 0; i < 4; i++) {
+                const a = (i / 4) * Math.PI * 2 + ringRot;
+                if (Math.sin(a) >= 0) {
+                    const x = cx + Math.cos(a) * 55;
+                    const y = cy + Math.sin(a) * 18;
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.fillText("APIPI", x, y);
+                }
+            }
+
+            /* central ring */
+            const isCH = hovered === 'center';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255,255,255,${isCH ? 0.3 : 0.1})`;
+            ctx.lineWidth = isCH ? 2 : 1;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+
+            /* nodes */
+            ctx.textAlign = 'center';
+            ctx.font = '10px "Space Mono"';
+
+            /* efecto de parpadeo para los orbes */
+            const flicker = Math.sin(t * 0.008) * 0.3 + 0.7;
+
+            for (let i = 0; i < nodes.length; i++) {
+                const n = nodes[i];
+                const p = projects[i];
+                const isH = i === hovered;
+
+                const size = isH ? 6 : 3.5;
+
+                /* glow con parpadeo */
+                ctx.globalAlpha = (isH ? 0.25 : 0.1) * flicker;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, size * 6, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                /* punto */
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+
+                /* ring hover */
+                if (isH) {
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, size + 6, 0, Math.PI * 2);
+                    ctx.strokeStyle = p.color;
+                    ctx.stroke();
+                }
+
+                /* label */
+                ctx.fillStyle = p.color;
+                const labelOffset = n.y < cy ? -25 : 30;
+                ctx.fillText(p.title, n.x, n.y + labelOffset);
+            }
+
+            requestAnimationFrame(draw);
         }
 
-        /* label */
-        ctx.fillStyle=p.color;
-        const labelOffset = n.y < cy ? -25 : 30;
-        ctx.fillText(p.title,n.x,n.y + labelOffset);
-    }
-
-    requestAnimationFrame(draw);
-}
-
-requestAnimationFrame(draw);
-</script>
+        requestAnimationFrame(draw);
+    </script>
 </body>
+
 </html>
