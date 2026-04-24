@@ -160,7 +160,11 @@
         c.addEventListener('pointerup', e => {
             if (!isDragging && pointerDown) {
                 const i = getNode(e.clientX, e.clientY);
-                if (typeof i === 'number' && i >= 0) window.open(projects[i].url, '_blank');
+                if (typeof i === 'number' && i >= 0) {
+                    window.open(projects[i].url, '_blank');
+                } else if (i === 'center') {
+                    window.open('https://apipiunai.github.io/apipi', '_blank');
+                }
             }
             pointerDown = false;
             isDragging = false;
