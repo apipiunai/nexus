@@ -92,7 +92,7 @@ function initStars(){
 initStars();
 
 /* INTERACTION */
-let rotation=0, hovered=-1;
+let rotation=0, hovered=-1, ringRot=0;
 let pointerDown=false, dragged=false;
 let lastAngle=0, velocity=0;
 const TH=6;
@@ -230,9 +230,8 @@ function draw(t){
         ctx.stroke();
     }
 
-    /* center glow (barato) */
+    /* center glow */
     const pulse = Math.sin(t*0.002)*0.3+0.7;
-
     const g = ctx.createRadialGradient(cx,cy,0,cx,cy,120);
     g.addColorStop(0,`rgba(255,255,255,${0.15*pulse})`);
     g.addColorStop(1,'rgba(255,255,255,0)');
@@ -241,10 +240,37 @@ function draw(t){
     ctx.arc(cx,cy,120,0,Math.PI*2);
     ctx.fill();
 
+    /* APIPI Ring (Behind) */
+    const targetSpeed = hovered === 'center' ? 0.015 : 0.01;
+    ringRot += targetSpeed;
+
+    ctx.font = '8px "Space Mono"';
+    for(let i=0; i<4; i++){
+        const a = (i/4)*Math.PI*2 + ringRot;
+        if(Math.sin(a) < 0){
+            const x = cx + Math.cos(a)*55;
+            const y = cy + Math.sin(a)*18;
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillText("APIPI", x, y);
+        }
+    }
+
+    /* central orb */
     ctx.beginPath();
     ctx.arc(cx,cy,30,0,Math.PI*2);
     ctx.fillStyle=`rgba(255,255,255,${0.9*pulse})`;
     ctx.fill();
+
+    /* APIPI Ring (Front) */
+    for(let i=0; i<4; i++){
+        const a = (i/4)*Math.PI*2 + ringRot;
+        if(Math.sin(a) >= 0){
+            const x = cx + Math.cos(a)*55;
+            const y = cy + Math.sin(a)*18;
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.fillText("APIPI", x, y);
+        }
+    }
 
     /* central ring */
     const isCH = hovered === 'center';
