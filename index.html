@@ -20,7 +20,7 @@ body{
     font-family:Inter;
     overflow:hidden;
 }
-canvas{position:fixed;inset:0;}
+canvas{position:fixed;inset:0;touch-action:none;user-select:none;}
 header{
     position:fixed;
     top:0;
@@ -92,62 +92,69 @@ function initStars(){
 initStars();
 
 /* INTERACTION */
-let rotation=0, hovered=-1, ringRot=0;
-let pointerDown=false, dragged=false;
-let lastAngle=0, velocity=0;
-const TH=6;
-let startX=0, startY=0;
+let rotation = 0, hovered = -1, ringRot = 0;
+let pointerDown = false, isDragging = false;
+let lastAngle = 0, velocity = 0;
+let startX = 0, startY = 0;
+const THRESHOLD = 5;
 
-c.addEventListener('pointerdown',e=>{
-    pointerDown=true; dragged=false;
-    startX=e.clientX; startY=e.clientY;
+c.addEventListener('pointerdown', e => {
+    pointerDown = true;
+    isDragging = false;
+    startX = e.clientX;
+    startY = e.clientY;
     lastAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
     velocity = 0;
     c.setPointerCapture(e.pointerId);
 });
 
-c.addEventListener('pointermove',e=>{
-    const x=e.clientX, y=e.clientY;
+c.addEventListener('pointermove', e => {
+    const x = e.clientX, y = e.clientY;
 
-    if(!pointerDown){
-        hovered=getNode(x,y);
+    if (!pointerDown) {
+        hovered = getNode(x, y);
         c.style.cursor = hovered !== -1 ? 'pointer' : 'default';
         return;
     }
 
-    const dx=x-startX;
-    const dy=y-startY;
-    if(!dragged && Math.sqrt(dx*dx+dy*dy)>TH) dragged=true;
+    const dx = x - startX;
+    const dy = y - startY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if(dragged){
+    if (!isDragging && dist > THRESHOLD) {
+        isDragging = true;
+        hovered = -1;
+    }
+
+    if (isDragging) {
         const currentAngle = Math.atan2(y - cy, x - cx);
         let delta = currentAngle - lastAngle;
-        
-        // Handle angle wrap-around
+
+        // Normalize delta to handle the PI / -PI transition
         if (delta > Math.PI) delta -= Math.PI * 2;
         if (delta < -Math.PI) delta += Math.PI * 2;
-        
+
         rotation += delta;
         velocity = delta;
         lastAngle = currentAngle;
-        hovered=-1;
     }
 });
 
-c.addEventListener('pointerup',e=>{
-    if(!dragged){
-        const i=getNode(e.clientX,e.clientY);
-        if(typeof i === 'number' && i>=0) window.open(projects[i].url,'_blank');
+c.addEventListener('pointerup', e => {
+    if (!isDragging && pointerDown) {
+        const i = getNode(e.clientX, e.clientY);
+        if (typeof i === 'number' && i >= 0) window.open(projects[i].url, '_blank');
     }
-    pointerDown=false;
+    pointerDown = false;
+    isDragging = false;
     c.releasePointerCapture(e.pointerId);
 });
 
-c.addEventListener('wheel',e=>{
+c.addEventListener('wheel', e => {
     const delta = e.deltaY * 0.001;
     rotation += delta;
-    velocity = delta * 0.5; // Give it a little push
-},{passive:true});
+    velocity = delta * 0.5;
+}, { passive: true });
 
 /* NODES */
 let nodes=[];
