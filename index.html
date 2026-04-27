@@ -181,6 +181,7 @@
         /* NODES */
         let nodes = [];
         const R = 0.35;
+        let lastNode = localStorage.getItem('last_node');
 
         function computeNodes() {
             nodes.length = 0;
@@ -328,8 +329,10 @@
                 const n = nodes[i];
                 const p = projects[i];
                 const isH = i === hovered;
+                const isLastNode = p.title === lastNode;
 
-                const size = isH ? 6 : 3.5;
+                const baseSize = isH ? 6 : 3.5;
+                const size = isLastNode ? baseSize * 2 : baseSize;
 
                 /* glow con parpadeo */
                 ctx.globalAlpha = (isH ? 0.25 : 0.1) * flicker;
