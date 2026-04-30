@@ -331,8 +331,8 @@
                 const isH = i === hovered;
                 const isLastNode = p.title === lastNode;
 
-                const baseSize = isH ? 6 : 3.5;
-                const size = isLastNode ? baseSize * 2 : baseSize;
+                const baseSize = isH ? 10 : 5;
+                const size = baseSize;
 
                 /* glow con parpadeo */
                 ctx.globalAlpha = (isH ? 0.25 : 0.1) * flicker;
