@@ -331,13 +331,13 @@
                 const isH = i === hovered;
                 const isLastNode = p.title === lastNode;
 
-                const baseSize = isH ? 10 : 5;
+                const baseSize = isH ? 20 : 10;
                 const size = baseSize;
 
                 /* glow con parpadeo */
                 ctx.globalAlpha = (isH ? 0.25 : 0.1) * flicker;
                 ctx.beginPath();
-                ctx.arc(n.x, n.y, size * 6, 0, Math.PI * 2);
+                ctx.arc(n.x, n.y, size * 2, 0, Math.PI * 2);
                 ctx.fillStyle = p.color;
                 ctx.fill();
                 ctx.globalAlpha = 1;
