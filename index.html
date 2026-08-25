@@ -49,6 +49,60 @@
             color: var(--dim);
             pointer-events: none;
         }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            font-family: "Space Mono";
+            font-size: 12px;
+            color: var(--dim);
+            pointer-events: none;
+        }
+
+        footer::after {
+            content: "";
+            position: absolute;
+            width: 450px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            filter: blur(20px);
+            opacity: 0;
+            animation: footerGlow 2.5s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes footerGlow {
+
+            0%,
+            100% {
+                opacity: 0;
+                transform: scale(0.7);
+            }
+
+            25% {
+                opacity: 0.25;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.15);
+            }
+
+            75% {
+                opacity: 0.25;
+                transform: scale(0.9);
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
@@ -59,6 +113,10 @@
         <div>NEXUS</div>
         <div id="count"></div>
     </header>
+
+    <footer>
+        <div>Haz click en los nodos para acceder a los proyectos</div>
+    </footer>
 
     <script>
         const projects = [
@@ -258,11 +316,11 @@
                 const dx = n.x - cx;
                 const dy = n.y - cy;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                
+
                 // End at the 60px ring
                 const endX = cx + (dx / dist) * 80;
                 const endY = cy + (dy / dist) * 80;
-                
+
                 ctx.beginPath();
                 ctx.moveTo(n.x, n.y);
                 ctx.lineTo(endX, endY);
