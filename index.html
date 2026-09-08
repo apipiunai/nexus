@@ -74,7 +74,7 @@
     </header>
 
     <footer>
-        <div>Click on the nodes to access the projects</div>
+        <div>Haz click en un nodo</div>
     </footer>
 
     <script>
@@ -89,7 +89,6 @@
             { title: 'DOWNLOADER', color: '#ff00aa', url: 'https://github.com/apipiunai/downloader' },
             { title: 'W-MANAGER', color: '#56b37e', url: 'https://apipiunai.github.io/web-manager' },
         ];
-
 
         document.getElementById('count').textContent = projects.length + " NODES";
 
@@ -108,7 +107,7 @@
         addEventListener('resize', resize);
         resize();
 
-        /* PARTICLES (S-motion) */
+        /* PARTICLES (S-motion, fondo) */
         let stars = [];
         function initStars() {
             stars = [];
@@ -128,20 +127,111 @@
         }
         initStars();
 
-        /* INTERACTION */
-        let rotation = 0, hovered = -1, ringRot = 0;
+        /* ============ MATEMATICA 3D (cuaterniones) ============ */
+        // q = [w, x, y, z]
+        function quatMultiply(a, b) {
+            const [aw, ax, ay, az] = a, [bw, bx, by, bz] = b;
+            return [
+                aw * bw - ax * bx - ay * by - az * bz,
+                aw * bx + ax * bw + ay * bz - az * by,
+                aw * by - ax * bz + ay * bw + az * bx,
+                aw * bz + ax * by - ay * bx + az * bw
+            ];
+        }
+        function quatNormalize(q) {
+            const len = Math.sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]) || 1;
+            return [q[0] / len, q[1] / len, q[2] / len, q[3] / len];
+        }
+        function quatFromAxisAngle(axis, angle) {
+            const half = angle / 2, s = Math.sin(half);
+            return [Math.cos(half), axis[0] * s, axis[1] * s, axis[2] * s];
+        }
+        function quatToMatrix(q) {
+            const [w, x, y, z] = q;
+            return [
+                1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w),
+                2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w),
+                2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)
+            ];
+        }
+        function applyMatrix(m, v) {
+            return {
+                x: m[0] * v.x + m[1] * v.y + m[2] * v.z,
+                y: m[3] * v.x + m[4] * v.y + m[5] * v.z,
+                z: m[6] * v.x + m[7] * v.y + m[8] * v.z
+            };
+        }
+
+        // Distribuye N puntos de forma uniforme sobre una esfera (poliedro geodésico).
+        // Escala automáticamente a cualquier cantidad de proyectos.
+        function fibonacciSphere(n) {
+            const pts = [];
+            if (n === 1) return [{ x: 0, y: 0, z: 1 }];
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+            for (let i = 0; i < n; i++) {
+                const y = 1 - (i / (n - 1)) * 2;
+                const r = Math.sqrt(Math.max(0, 1 - y * y));
+                const theta = goldenAngle * i;
+                pts.push({ x: Math.cos(theta) * r, y, z: Math.sin(theta) * r });
+            }
+            return pts;
+        }
+
+        // Repulsión tipo Thomson (como electrones sobre una esfera): parte de la
+        // espiral de Fibonacci y la relaja para que la distancia entre nodos
+        // vecinos sea lo más uniforme posible, sea cual sea N.
+        function relaxSphere(points, iterations = 260) {
+            const pts = points.map(p => ({ ...p }));
+            const n = pts.length;
+            for (let iter = 0; iter < iterations; iter++) {
+                const step = 0.22 * (1 - iter / iterations) + 0.01;
+                const fx = new Array(n).fill(0), fy = new Array(n).fill(0), fz = new Array(n).fill(0);
+                for (let i = 0; i < n; i++) {
+                    for (let j = i + 1; j < n; j++) {
+                        let dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, dz = pts[i].z - pts[j].z;
+                        let d2 = dx * dx + dy * dy + dz * dz;
+                        if (d2 < 1e-6) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; dz = Math.random() - 0.5; d2 = 1e-6; }
+                        const d = Math.sqrt(d2);
+                        const f = 1 / d2; // repulsión inversamente proporcional al cuadrado de la distancia
+                        fx[i] += (dx / d) * f; fy[i] += (dy / d) * f; fz[i] += (dz / d) * f;
+                        fx[j] -= (dx / d) * f; fy[j] -= (dy / d) * f; fz[j] -= (dz / d) * f;
+                    }
+                }
+                for (let i = 0; i < n; i++) {
+                    pts[i].x += fx[i] * step;
+                    pts[i].y += fy[i] * step;
+                    pts[i].z += fz[i] * step;
+                    const len = Math.sqrt(pts[i].x ** 2 + pts[i].y ** 2 + pts[i].z ** 2) || 1;
+                    pts[i].x /= len; pts[i].y /= len; pts[i].z /= len;
+                }
+            }
+            return pts;
+        }
+
+        const basePositions = relaxSphere(fibonacciSphere(projects.length));
+
+        let orientation = [1, 0, 0, 0];       // cuaternión identidad
+        let angularVelocity = { axis: [0, 1, 0], angle: 0 }; // inercia
+        const ROTATE_SPEED = 0.0055;
+        const DAMPING = 0.94;
+        const IDLE_SPEED = 0.0015;
+        const PERSPECTIVE = 900;
+        const R = 0.30; // radio de la esfera relativo a min(W,H)
+
+        let nodesScreen = []; // proyección 2D del último frame (para hover/click)
+
+        /* INTERACCION */
+        let hovered = -1;
         let pointerDown = false, isDragging = false;
-        let lastAngle = 0, velocity = 0;
-        let startX = 0, startY = 0;
+        let startX = 0, startY = 0, lastX = 0, lastY = 0;
         const THRESHOLD = 5;
 
         c.addEventListener('pointerdown', e => {
             pointerDown = true;
             isDragging = false;
-            startX = e.clientX;
-            startY = e.clientY;
-            lastAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
-            velocity = 0;
+            startX = lastX = e.clientX;
+            startY = lastY = e.clientY;
+            angularVelocity.angle = 0;
             c.setPointerCapture(e.pointerId);
         });
 
@@ -154,27 +244,25 @@
                 return;
             }
 
-            const dx = x - startX;
-            const dy = y - startY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (!isDragging && dist > THRESHOLD) {
+            const totalDist = Math.hypot(x - startX, y - startY);
+            if (!isDragging && totalDist > THRESHOLD) {
                 isDragging = true;
                 hovered = -1;
             }
 
             if (isDragging) {
-                const currentAngle = Math.atan2(y - cy, x - cx);
-                let delta = currentAngle - lastAngle;
-
-                // Normalize delta to handle the PI / -PI transition
-                if (delta > Math.PI) delta -= Math.PI * 2;
-                if (delta < -Math.PI) delta += Math.PI * 2;
-
-                rotation += delta;
-                velocity = delta;
-                lastAngle = currentAngle;
+                const dx = x - lastX, dy = y - lastY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0.0001) {
+                    // Eje perpendicular al arrastre en el plano de pantalla ->
+                    // rotación libre en cualquier dirección (trackball).
+                    const axis = [-dy / dist, dx / dist, 0];
+                    const angle = dist * ROTATE_SPEED;
+                    orientation = quatNormalize(quatMultiply(quatFromAxisAngle(axis, angle), orientation));
+                    angularVelocity = { axis, angle };
+                }
             }
+            lastX = x; lastY = y;
         });
 
         c.addEventListener('pointerup', e => {
@@ -183,8 +271,6 @@
                 if (typeof i === 'number' && i >= 0) {
                     localStorage.setItem("last_node", projects[i].title);
                     window.open(projects[i].url, '_blank');
-                } else if (i === 'center') {
-                    // window.open('https://apipiunai.github.io/apipi', '_blank');
                 }
             }
             pointerDown = false;
@@ -193,65 +279,52 @@
         });
 
         c.addEventListener('wheel', e => {
-            const delta = e.deltaY * 0.001;
-            rotation += delta;
-            velocity = delta * 0.5;
+            const angle = e.deltaY * 0.0018;
+            const axis = [0, 1, 0];
+            orientation = quatNormalize(quatMultiply(quatFromAxisAngle(axis, angle), orientation));
+            angularVelocity = { axis, angle: angle * 0.6 };
         }, { passive: true });
-
-        /* NODES */
-        let nodes = [];
-        const R = 0.35;
-        let lastNode = localStorage.getItem('last_node');
-
-        function computeNodes() {
-            nodes.length = 0;
-            const r = Math.min(W, H) * R;
-
-            for (let i = 0; i < projects.length; i++) {
-                const a = (i / projects.length) * Math.PI * 2 + rotation;
-                nodes.push({
-                    x: cx + Math.cos(a) * r,
-                    y: cy + Math.sin(a) * r
-                });
-            }
-        }
 
         function getNode(x, y) {
             const dcx = x - cx, dcy = y - cy;
             if (dcx * dcx + dcy * dcy < 900) return 'center';
 
-            for (let i = 0; i < nodes.length; i++) {
-                const dx = x - nodes[i].x;
-                const dy = y - nodes[i].y;
+            for (let i = 0; i < nodesScreen.length; i++) {
+                const n = nodesScreen[i];
+                if (n.hidden) continue;
+                const dx = x - n.x, dy = y - n.y;
                 if (dx * dx + dy * dy < 900) return i;
             }
             return -1;
         }
 
+        function mapRange(v, a, b, c, d) {
+            const t = (v - a) / (b - a);
+            return c + Math.max(0, Math.min(1, t)) * (d - c);
+        }
+
         /* DRAW */
+        let ringRot = 0;
         function draw(t) {
             ctx.clearRect(0, 0, W, H);
 
-            // Apply inertia
+            /* rotación: inercia tras soltar, o giro ambiental si está quieto */
             if (!pointerDown) {
-                rotation += velocity;
-                velocity *= 0.95; // damping
-
-                // Very slow ambient rotation when idle
-                if (Math.abs(velocity) < 0.0001) {
-                    rotation += 0.001;
+                if (Math.abs(angularVelocity.angle) > 0.00005) {
+                    orientation = quatNormalize(quatMultiply(
+                        quatFromAxisAngle(angularVelocity.axis, angularVelocity.angle), orientation));
+                    angularVelocity.angle *= DAMPING;
+                } else {
+                    orientation = quatNormalize(quatMultiply(
+                        quatFromAxisAngle([0, 1, 0], IDLE_SPEED), orientation));
                 }
             }
 
-            /* particles (S-motion) */
+            /* particulas de fondo */
             for (const s of stars) {
                 s.y -= s.vy;
-                if (s.y < -20) {
-                    s.y = H + 20;
-                    s.bx = Math.random() * W;
-                }
+                if (s.y < -20) { s.y = H + 20; s.bx = Math.random() * W; }
                 const x = s.bx + Math.sin(t * s.freq + s.phase) * s.amp;
-
                 ctx.globalAlpha = s.a;
                 ctx.beginPath();
                 ctx.arc(x, s.y, s.r, 0, Math.PI * 2);
@@ -260,34 +333,46 @@
             }
             ctx.globalAlpha = 1;
 
-            computeNodes();
+            /* proyección 3D -> 2D */
+            const sphereR = Math.min(W, H) * R;
+            const m = quatToMatrix(orientation);
+            const projected = basePositions.map((p, i) => {
+                const v = applyMatrix(m, p);
+                const scale = PERSPECTIVE / (PERSPECTIVE - v.z * sphereR);
+                return {
+                    i,
+                    x: cx + v.x * sphereR * scale,
+                    y: cy + v.y * sphereR * scale,
+                    z: v.z,
+                    scale,
+                    hidden: false
+                };
+            });
+            nodesScreen = projected; // para hit-testing (índice = orden original)
 
-            /* orbit */
-            const r = Math.min(W, H) * R;
+            /* silueta de la esfera */
             ctx.strokeStyle = 'rgba(255,255,255,0.1)';
             ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.arc(cx, cy, sphereR, 0, Math.PI * 2);
             ctx.stroke();
 
-            /* connections (towards central ring) */
-            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-            for (let i = 0; i < nodes.length; i++) {
-                const n = nodes[i];
-                const dx = n.x - cx;
-                const dy = n.y - cy;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+            /* orden de pintado: de más lejano a más cercano (pintor) */
+            const order = [...projected].sort((a, b) => a.z - b.z);
 
-                // End at the 60px ring
+            /* conexiones nodo -> anillo central, atenuadas por profundidad */
+            for (const n of order) {
+                const dx = n.x - cx, dy = n.y - cy;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
                 const endX = cx + (dx / dist) * 80;
                 const endY = cy + (dy / dist) * 80;
-
+                ctx.strokeStyle = `rgba(255,255,255,${mapRange(n.z, -1, 1, 0.03, 0.14)})`;
                 ctx.beginPath();
                 ctx.moveTo(n.x, n.y);
                 ctx.lineTo(endX, endY);
                 ctx.stroke();
             }
 
-            /* center glow */
+            /* centro: glow */
             const pulse = Math.sin(t * 0.002) * 0.3 + 0.7;
             const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 120);
             g.addColorStop(0, `rgba(255,255,255,${0.15 * pulse})`);
@@ -297,10 +382,8 @@
             ctx.arc(cx, cy, 120, 0, Math.PI * 2);
             ctx.fill();
 
-            /* APIPI Ring (Behind) */
-            const targetSpeed = hovered === 'center' ? 0.015 : 0.01;
-            ringRot += targetSpeed;
-
+            /* anillo APIPI (detras) */
+            ringRot += 0.01;
             ctx.font = '8px "Space Mono"';
             for (let i = 0; i < 5; i++) {
                 const a = (i / 5) * Math.PI * 2 + ringRot;
@@ -312,13 +395,13 @@
                 }
             }
 
-            /* central orb */
+            /* orbe central */
             ctx.beginPath();
             ctx.arc(cx, cy, 30, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255,255,255,${0.9 * pulse})`;
             ctx.fill();
 
-            /* APIPI Ring (Front) */
+            /* anillo APIPI (delante) */
             for (let i = 0; i < 5; i++) {
                 const a = (i / 5) * Math.PI * 2 + ringRot;
                 if (Math.sin(a) >= 0) {
@@ -329,46 +412,36 @@
                 }
             }
 
-            /* central ring */
-            const isCH = hovered === 'center';
+            /* anillo central */
             ctx.beginPath();
             ctx.arc(cx, cy, 80, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(255,255,255,${isCH ? 0.3 : 0.1})`;
-            ctx.lineWidth = isCH ? 2 : 1;
+            ctx.strokeStyle = `rgba(255,255,255,${hovered === 'center' ? 0.3 : 0.1})`;
+            ctx.lineWidth = hovered === 'center' ? 2 : 1;
             ctx.stroke();
             ctx.lineWidth = 1;
 
-            /* nodes */
+            /* nodos, de más lejano a más cercano */
             ctx.textAlign = 'center';
-            ctx.font = '12px "Space Mono"';
-
-            /* efecto de parpadeo para los orbes */
             const flicker = Math.sin(t * 0.008) * 0.3 + 0.7;
 
-            for (let i = 0; i < nodes.length; i++) {
-                const n = nodes[i];
-                const p = projects[i];
-                const isH = i === hovered;
-                const isLastNode = p.title === lastNode;
+            for (const n of order) {
+                const p = projects[n.i];
+                const isH = n.i === hovered;
+                const depthAlpha = mapRange(n.z, -1, 1, 0.35, 1);
+                const size = (isH ? 12.5 : 7.5) * Math.max(0.55, n.scale * 0.9);
 
-                const baseSize = isH ? 12.5 : 7.5;
-                const size = baseSize;
-
-                /* glow con parpadeo */
-                ctx.globalAlpha = (isH ? 0.25 : 0.1) * flicker;
+                ctx.globalAlpha = (isH ? 0.25 : 0.1) * flicker * depthAlpha;
                 ctx.beginPath();
                 ctx.arc(n.x, n.y, size * 1.5, 0, Math.PI * 2);
                 ctx.fillStyle = p.color;
                 ctx.fill();
-                ctx.globalAlpha = 1;
 
-                /* punto */
+                ctx.globalAlpha = depthAlpha;
                 ctx.beginPath();
                 ctx.arc(n.x, n.y, size, 0, Math.PI * 2);
                 ctx.fillStyle = p.color;
                 ctx.fill();
 
-                /* ring hover */
                 if (isH) {
                     ctx.beginPath();
                     ctx.arc(n.x, n.y, size + 6, 0, Math.PI * 2);
@@ -376,11 +449,12 @@
                     ctx.stroke();
                 }
 
-                /* label */
+                ctx.font = (isH ? '13px' : '11px') + ' "Space Mono"';
                 ctx.fillStyle = p.color;
-                const labelOffset = n.y < cy ? -25 : 30;
+                const labelOffset = n.y < cy ? -(size + 14) : size + 18;
                 ctx.fillText(p.title, n.x, n.y + labelOffset);
             }
+            ctx.globalAlpha = 1;
 
             requestAnimationFrame(draw);
         }
