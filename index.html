@@ -162,8 +162,8 @@
             };
         }
 
-        // Distribuye N puntos de forma uniforme sobre una esfera (poliedro geodésico).
-        // Escala automáticamente a cualquier cantidad de proyectos.
+        // Distribuye N puntos de forma uniforme sobre una esfera (espiral de Fibonacci),
+        // usado como punto de partida para la relajación.
         function fibonacciSphere(n) {
             const pts = [];
             if (n === 1) return [{ x: 0, y: 0, z: 1 }];
@@ -177,10 +177,22 @@
             return pts;
         }
 
-        // Repulsión tipo Thomson (como electrones sobre una esfera): parte de la
-        // espiral de Fibonacci y la relaja para que la distancia entre nodos
-        // vecinos sea lo más uniforme posible, sea cual sea N.
-        function relaxSphere(points, iterations = 260) {
+        // Variante de la espiral con jitter aleatorio, para generar puntos de
+        // partida distintos entre si en cada intento de bestSphereDistribution.
+        function jitteredSphereStart(n) {
+            return fibonacciSphere(n).map(p => {
+                const jx = p.x + (Math.random() - 0.5) * 0.6;
+                const jy = p.y + (Math.random() - 0.5) * 0.6;
+                const jz = p.z + (Math.random() - 0.5) * 0.6;
+                const len = Math.sqrt(jx * jx + jy * jy + jz * jz) || 1;
+                return { x: jx / len, y: jy / len, z: jz / len };
+            });
+        }
+
+        // Repulsión tipo Thomson (como electrones sobre una esfera): relaja un
+        // set de puntos de partida para que la distancia entre nodos vecinos
+        // sea lo más uniforme posible.
+        function relaxSphere(points, iterations = 300) {
             const pts = points.map(p => ({ ...p }));
             const n = pts.length;
             for (let iter = 0; iter < iterations; iter++) {
@@ -208,7 +220,38 @@
             return pts;
         }
 
-        const basePositions = relaxSphere(fibonacciSphere(projects.length));
+        // Energia potencial total (suma de 1/distancia entre cada par de
+        // puntos) - metrica estandar del problema de Thomson. A menor
+        // energia, distribucion mas uniforme/simetrica.
+        function sphereEnergy(pts) {
+            let e = 0;
+            for (let i = 0; i < pts.length; i++) {
+                for (let j = i + 1; j < pts.length; j++) {
+                    const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, dz = pts[i].z - pts[j].z;
+                    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-6;
+                    e += 1 / d;
+                }
+            }
+            return e;
+        }
+
+        // relaxSphere puede quedar atrapado en un minimo local asimetrico
+        // dependiendo del punto de partida. Para conseguir SIEMPRE la
+        // distribucion mas simetrica posible, sea cual sea N, se relaja desde
+        // varios puntos de partida distintos y nos quedamos con el de menor
+        // energia (el mas uniforme). Se ajusta solo al numero de nodos.
+        function bestSphereDistribution(n, attempts = 25, iterations = 300) {
+            let best = null, bestEnergy = Infinity;
+            for (let a = 0; a < attempts; a++) {
+                const start = a === 0 ? fibonacciSphere(n) : jitteredSphereStart(n);
+                const relaxed = relaxSphere(start, iterations);
+                const e = sphereEnergy(relaxed);
+                if (e < bestEnergy) { bestEnergy = e; best = relaxed; }
+            }
+            return best;
+        }
+
+        const basePositions = bestSphereDistribution(projects.length);
 
         let orientation = [1, 0, 0, 0];       // cuaternión identidad
         let angularVelocity = { axis: [0, 1, 0], angle: 0 }; // inercia
